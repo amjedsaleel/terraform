@@ -5,35 +5,35 @@ provider "aws" {
 
 # VPC configuration
 resource "aws_vpc" "first_vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr_block
   instance_tenancy = "default"
   enable_dns_hostnames = true
 
   tags = {
-    Name = "first_vpc"
+    Name = var.vpc_name
   }  
 }
 
 # Public subnet
 resource "aws_subnet" "public-1" {
   vpc_id = aws_vpc.first_vpc.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
-  map_public_ip_on_launch = "true"
+  cidr_block = var.public_subnet["cidir_block"]
+  availability_zone = var.public_subnet["availability_zone"]
+  map_public_ip_on_launch = var.public_subnet["map_public_ip_on_launch"]
 
   tags = {
-    Name = "Public-1 | first_vpc"
+    Name = var.public_subnet["name"]
   }
 }
 
 # Private subnet
 resource "aws_subnet" "private-1" {
   vpc_id = aws_vpc.first_vpc.id
-  cidr_block = "10.0.2.0/24"
-  availability_zone = "us-east-1a"
+  cidr_block = var.private_subnet["cidir_block"]
+  availability_zone = var.private_subnet["availability_zone"]
 
   tags = {
-    Name = "Private-1 | first_vpc"
+    Name = var.private_subnet["name"]
   }
 }
 
@@ -42,7 +42,7 @@ resource "aws_internet_gateway" "first_vpc_gw" {
   vpc_id = aws_vpc.first_vpc.id
 
   tags = {
-    Name = "first_vpc_IGW | first_vpc"
+    Name = "${var.vpc_name}_IGW" 
   }
 }
 
@@ -56,12 +56,12 @@ resource "aws_route_table" "public-rt" {
   }
 
   route {
-     ipv6_cidr_block = "::/0"
+    ipv6_cidr_block = "::/0"
     gateway_id = aws_internet_gateway.first_vpc_gw.id
   }
 
   tags = {
-    Name = "public-rt | first_vpc"
+    Name = "public-rt"
   }
 }
 
@@ -70,7 +70,7 @@ resource "aws_route_table" "private-rt" {
   vpc_id = aws_vpc.first_vpc.id
   
   tags = {
-    Name = "private-rt | first_vpc"
+    Name = "private-rt"
   }
 }
 
@@ -92,39 +92,47 @@ resource "aws_security_group" "allow_ssh" {
   description = "Allow ssh traffic"
   vpc_id      = aws_vpc.first_vpc.id
 
-  ingress {
-    description = "Allow the ssh"
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+  # Inbound traffic
+  dynamic "ingress" {
+    for_each = var.inbound_traffic
+    content {
+      description = ingress.value["description"]
+      from_port = ingress.value["from_port"]
+      to_port = ingress.value["to_port"]
+      protocol = ingress.value["protocol"]
+      cidr_blocks = ingress.value["cidr_blocks"]
+      ipv6_cidr_blocks = ingress.value["ipv6_cidr_blocks"]
+    }
   }
 
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+  # Outbound trafic
+  dynamic "egress" {
+    for_each = var.outbound_traffic
+    content {
+      from_port = egress.value["from_port"]
+      to_port = egress.value["to_port"]
+      protocol = egress.value["protocol"]
+      cidr_blocks = egress.value["cidr_blocks"]
+      ipv6_cidr_blocks = egress.value["ipv6_cidr_blocks"]
+    }
   }
 
   tags = {
-    Name = "SSH | first_vpc"
+    Name = "Security groups"
   }
 }
 
 # Key pair 
 resource "aws_key_pair" "ec2-key-pair" {
-  key_name   = "ec2-key-pair"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCkNpCMPAVoDEUkOzC9n743n5pB9SXpIJacrFvSLWUoGa2T32SooRwM0n+DQZ1eXY3Ge+KKcXHm5UzvLuP+mc6z9fgpG95y7oSEhXTYu30aYrbFIjM83zVThSyFHz+bu+pKNospmJJ5QhuSknybIJUCrTq0EV7i7IwdOy7qWS/A4XLQKdSzzJ3v1m+yhyntECmUgR+afbpebN/jCwUVtKwd11YWdRf8C7fLOpsGPbSRwmMafXex2G/HJ4VgmML0cbS7ZjiscaLOYff6JJlEfxWMLmwxgZruntI0A7avXBUGVc3slLNn6KA2AiiZr2WAyqEKFSrq3F6skTnlmGGBFIbck4h+I5zw6LbZnJP53v3/rIZ+8Z6a0m8jujh4jXt8rofeLNbSp9pBqs0avP57BMbM68DLRDLLB6iFKl5l99YQNsLlwUI+aGQE7g35MD6M8QiUczxOZOBWVd/sKxQQ178tPEjtyLKRnDmCTLMTN5XyIEj6WmKaQwIBvM9AjyxDwO8= amjed@pop-os"
+  key_name   = var.ssh_key_pair["key_name"]
+  public_key = var.ssh_key_pair["public_key"]
 }
 
 # Public EC2
 resource "aws_instance" "public-ec2" {
-  ami = "ami-04505e74c0741db8d"
-  instance_type = "t2.micro"
-  availability_zone = "us-east-1a"
+  ami = var.ec2_instance["ami"]
+  instance_type = var.ec2_instance["instance_type"]
+  availability_zone = var.ec2_instance["availability_zone"]
   subnet_id = aws_subnet.public-1.id
   key_name = aws_key_pair.ec2-key-pair.id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
@@ -136,10 +144,10 @@ resource "aws_instance" "public-ec2" {
 
 # Private EC2
 resource "aws_instance" "private-ec2" {
-  ami = "ami-04505e74c0741db8d"
-  instance_type = "t2.micro"
-  availability_zone = "us-east-1a"
-  associate_public_ip_address = true
+  ami = var.ec2_instance["ami"]
+  instance_type = var.ec2_instance["instance_type"]
+  availability_zone = var.ec2_instance["availability_zone"]
+  associate_public_ip_address = var.ec2_instance["associate_public_ip_address"]
   subnet_id = aws_subnet.private-1.id
   key_name = aws_key_pair.ec2-key-pair.id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
