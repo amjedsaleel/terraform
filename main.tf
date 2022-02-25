@@ -46,6 +46,22 @@ resource "aws_internet_gateway" "first_vpc_gw" {
   }
 }
 
+# Elastic IP
+resource "aws_eip" "nat_ip" {
+}
+
+# Nat gateway
+resource "aws_nat_gateway" "first_vpc_nat" {
+  subnet_id = aws_subnet.public-1.id
+  allocation_id = aws_eip.nat_ip.id
+  
+  tags = {
+    Name = "First vpc nat"
+  }
+
+  depends_on = [aws_internet_gateway.first_vpc_gw]
+}
+
 # Route table for Public-1 subnet
 resource "aws_route_table" "public-rt" {
   vpc_id = aws_vpc.first_vpc.id
@@ -68,6 +84,11 @@ resource "aws_route_table" "public-rt" {
 # Route table for Private-1 subnet
 resource "aws_route_table" "private-rt" {
   vpc_id = aws_vpc.first_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.first_vpc_nat.id
+  }
   
   tags = {
     Name = "private-rt"
@@ -85,6 +106,8 @@ resource "aws_route_table_association" "private-rta" {
   subnet_id =  aws_subnet.private-1.id
   route_table_id = aws_route_table.private-rt.id
 }
+
+
 
 # Security groups
 resource "aws_security_group" "allow_ssh" {
