@@ -69,10 +69,18 @@ variable "outbound_traffic" {
   ]
 }
 
-variable ssh_key_pair {
+variable public_key_pair {
   type = map
   default = {
-    "key_name" = "ec2-key-pair"
+    "key_name" = "public"
+    "public_key" = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCkNpCMPAVoDEUkOzC9n743n5pB9SXpIJacrFvSLWUoGa2T32SooRwM0n+DQZ1eXY3Ge+KKcXHm5UzvLuP+mc6z9fgpG95y7oSEhXTYu30aYrbFIjM83zVThSyFHz+bu+pKNospmJJ5QhuSknybIJUCrTq0EV7i7IwdOy7qWS/A4XLQKdSzzJ3v1m+yhyntECmUgR+afbpebN/jCwUVtKwd11YWdRf8C7fLOpsGPbSRwmMafXex2G/HJ4VgmML0cbS7ZjiscaLOYff6JJlEfxWMLmwxgZruntI0A7avXBUGVc3slLNn6KA2AiiZr2WAyqEKFSrq3F6skTnlmGGBFIbck4h+I5zw6LbZnJP53v3/rIZ+8Z6a0m8jujh4jXt8rofeLNbSp9pBqs0avP57BMbM68DLRDLLB6iFKl5l99YQNsLlwUI+aGQE7g35MD6M8QiUczxOZOBWVd/sKxQQ178tPEjtyLKRnDmCTLMTN5XyIEj6WmKaQwIBvM9AjyxDwO8= amjed@pop-os"
+  }
+}
+
+variable private_key_pair {
+  type = map
+  default = {
+    "key_name" = "private"
     "public_key" = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCkNpCMPAVoDEUkOzC9n743n5pB9SXpIJacrFvSLWUoGa2T32SooRwM0n+DQZ1eXY3Ge+KKcXHm5UzvLuP+mc6z9fgpG95y7oSEhXTYu30aYrbFIjM83zVThSyFHz+bu+pKNospmJJ5QhuSknybIJUCrTq0EV7i7IwdOy7qWS/A4XLQKdSzzJ3v1m+yhyntECmUgR+afbpebN/jCwUVtKwd11YWdRf8C7fLOpsGPbSRwmMafXex2G/HJ4VgmML0cbS7ZjiscaLOYff6JJlEfxWMLmwxgZruntI0A7avXBUGVc3slLNn6KA2AiiZr2WAyqEKFSrq3F6skTnlmGGBFIbck4h+I5zw6LbZnJP53v3/rIZ+8Z6a0m8jujh4jXt8rofeLNbSp9pBqs0avP57BMbM68DLRDLLB6iFKl5l99YQNsLlwUI+aGQE7g35MD6M8QiUczxOZOBWVd/sKxQQ178tPEjtyLKRnDmCTLMTN5XyIEj6WmKaQwIBvM9AjyxDwO8= amjed@pop-os"
   }
 }

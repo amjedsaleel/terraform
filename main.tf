@@ -107,8 +107,6 @@ resource "aws_route_table_association" "private-rta" {
   route_table_id = aws_route_table.private-rt.id
 }
 
-
-
 # Security groups
 resource "aws_security_group" "allow_ssh" {
   name        = "allow_ssh"
@@ -145,10 +143,16 @@ resource "aws_security_group" "allow_ssh" {
   }
 }
 
-# Key pair 
-resource "aws_key_pair" "ec2-key-pair" {
-  key_name   = var.ssh_key_pair["key_name"]
-  public_key = var.ssh_key_pair["public_key"]
+# Key pair public
+resource "aws_key_pair" "public_key_pair" {
+  key_name   = var.public_key_pair["key_name"]
+  public_key = var.public_key_pair["public_key"]
+}
+
+# Key pair private
+resource "aws_key_pair" "private_key_pair" {
+  key_name   = var.private_key_pair["key_name"]
+  public_key = var.private_key_pair["public_key"]
 }
 
 # Public EC2
@@ -157,7 +161,7 @@ resource "aws_instance" "public-ec2" {
   instance_type = var.ec2_instance["instance_type"]
   availability_zone = var.ec2_instance["availability_zone"]
   subnet_id = aws_subnet.public-1.id
-  key_name = aws_key_pair.ec2-key-pair.id
+  key_name = aws_key_pair.public_key_pair.id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 
   tags = {
@@ -172,7 +176,7 @@ resource "aws_instance" "private-ec2" {
   availability_zone = var.ec2_instance["availability_zone"]
   associate_public_ip_address = var.ec2_instance["associate_public_ip_address"]
   subnet_id = aws_subnet.private-1.id
-  key_name = aws_key_pair.ec2-key-pair.id
+  key_name = aws_key_pair.private_key_pair.id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 
   tags = {
